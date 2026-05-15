@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Freelance Philosophers</title>
+<style>
+  :root {
+    --ink: #2b2118;
+    --accent: #d94f3a;
+    --accent-dark: #b03a28;
+    --shadow: rgba(43, 33, 24, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  body {
+    font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", cursive;
+    color: var(--ink);
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 2rem 1.25rem 1.5rem;
+    line-height: 1.4;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .logo {
+    font-size: clamp(2.6rem, 10vw, 5rem);
+    line-height: 1;
+    margin: 0 0 0.6rem;
+    letter-spacing: -0.01em;
+    font-weight: bold;
+  }
+
+  .logo .line {
+    display: block;
+  }
+
+  .logo .freelance {
+    color: #3aa9ff;
+    text-shadow:
+      0 0 14px rgba(58, 169, 255, 0.55),
+      0 0 32px rgba(58, 169, 255, 0.35),
+      0 0 60px rgba(58, 169, 255, 0.2);
+  }
+
+  .logo .philosophers span {
+    display: inline-block;
+    text-shadow:
+      0 0 12px currentColor,
+      0 0 26px currentColor;
+  }
+
+  .tagline {
+    margin: 0;
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
+    opacity: 0.75;
+    font-style: italic;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2.2rem;
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 0;
+  }
+
+  .card {
+    background: #fffaf0;
+    border: 3px dashed var(--ink);
+    border-radius: 22px;
+    padding: clamp(1.5rem, 5vw, 2.75rem);
+    box-shadow: 8px 8px 0 var(--shadow);
+    width: 100%;
+    text-align: center;
+    transform: rotate(-0.4deg);
+  }
+
+  .question {
+    font-size: clamp(1.4rem, 3.6vw, 2.4rem);
+    line-height: 1.35;
+    margin: 0;
+    transition: opacity 150ms ease, transform 150ms ease;
+    min-height: 3.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .question.fading {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  button {
+    font-family: inherit;
+    font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+    color: #fffaf0;
+    background: var(--accent);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 0.85rem 1.8rem;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 var(--ink);
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    transform: rotate(-1deg);
+  }
+
+  button:hover {
+    background: var(--accent-dark);
+    transform: rotate(1.5deg) translateY(-2px);
+    box-shadow: 6px 7px 0 var(--ink);
+    animation: wiggle 380ms ease-in-out;
+  }
+
+  button:active {
+    transform: rotate(-0.5deg) translateY(2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  button:focus-visible {
+    outline: 3px dotted var(--ink);
+    outline-offset: 4px;
+  }
+
+  @keyframes wiggle {
+    0%   { transform: rotate(1.5deg) translateY(-2px); }
+    25%  { transform: rotate(-2deg) translateY(-3px); }
+    50%  { transform: rotate(2deg)  translateY(-2px); }
+    75%  { transform: rotate(-1deg) translateY(-3px); }
+    100% { transform: rotate(1.5deg) translateY(-2px); }
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    opacity: 0.55;
+    margin: 0;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    .card { transform: none; }
+    button { transform: none; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1 class="logo">
+      <span class="line freelance">freelance</span>
+      <span class="line philosophers"
+        ><span style="color:#ef4444">p</span><span style="color:#f97316">h</span><span style="color:#eab308">i</span><span style="color:#84cc16">l</span><span style="color:#22c55e">o</span><span style="color:#14b8a6">s</span><span style="color:#06b6d4">o</span><span style="color:#3b82f6">p</span><span style="color:#8b5cf6">h</span><span style="color:#d946ef">e</span><span style="color:#ec4899">r</span><span style="color:#f43f5e">s</span></span>
+    </h1>
+  </header>
+
+  <main>
+    <div class="card">
+      <p id="question" class="question" aria-live="polite"></p>
+    </div>
+    <button id="more" type="button">hit me with another one</button>
+    <p class="hint">(or hit space/enter, we're not picky)</p>
+  </main>
+
+  <footer>
+    © Freelance Philosophers · est. probably
+  </footer>
+
+<script>
+  const questions = [
+    "do crabs think fish are flying?",
+    "what's the glory in glory holes?",
+    "why is the male g spot located in the ass?",
+    "if two mind readers read each other's minds at the same time… whose thought is it?",
+    "why does beer taste so good?",
+    "is porn cheating?",
+    "why do men have nipples?",
+    "what is it like to be a bat?",
+    "if not now, when?",
+    "where is everybody???",
+    "tits or ASS?",
+    "have you ever met a dolphin you could trust?",
+    "do fish know they're wet?",
+    "what is a freelance philosopher?",
+    "is a hot dog a sandwich?",
+    "is cereal soup?",
+    "is masturbation just a one-night stand with yourself?",
+    "if you fantasize about your ex, are you cheating on the fantasy?",
+    "is monogamy a scam invented by Big Wedding?",
+    "why do men think about Rome?",
+    "is your butt the back of your front or the front of your back?",
+    "when does a hookup become a relationship?",
+    "can you fall in love with a smell?",
+    "is virginity a social construct or a leaderboard?",
+    "is flirting just lying with eye contact?",
+    "if your AI girlfriend cheats, are you single again?",
+    "is being horny a feeling or a weather pattern?",
+    "is foreplay just panic before the deadline?",
+    "do dogs think we work for them?",
+    "when a cow looks at you, what does it see?",
+    "when fish sleep, do they dream of land?",
+    "if reincarnation is real, do animals get promoted or demoted?",
+    "are sharks happy?",
+    "do pigeons remember faces, or are we all the same to them?",
+    "if octopuses had more time, would they take over?",
+    "do bees know we eat their food?",
+    "can a chicken be ambitious?",
+    "could you outrun a chicken?",
+    "do worms know they're cut in half?",
+    "if a snail had legs, would it still be slow?",
+    "do ants commute?",
+    "when a fly lands on you, did it pick you?",
+    "if i think therefore i am, what about when i'm not thinking?",
+    "can you owe yourself an apology?",
+    "is sleep just death with a return ticket?",
+    "if you never told anyone your dream, did you dream it?",
+    "what if we're NPCs and someone forgot to log in?",
+    "is being alive a hobby?",
+    "if you cut your hair, is it still you?",
+    "if you eat yourself, do you double in size or disappear?",
+    "when you die, do you find out who's been talking shit?",
+    "if you punched yourself in the face, who started it?",
+    "is heaven just a really long Tuesday?",
+    "is your phone listening, and does it like what it hears?",
+    "when AI dreams, what does it dream of?",
+    "is autocomplete reading my mind, or am I just predictable?",
+    "is the algorithm my therapist?",
+    "if a deepfake confesses, is it a confession?",
+    "why do we trust people with strong wifi passwords?",
+    "is your Spotify Wrapped a personality test?",
+    "if you die mid-text, who answers?",
+    "is incognito mode a moral high ground or a low one?",
+    "why do we apologize to furniture we bump into?",
+    "why does silence get awkward at 3 seconds?",
+    "is small talk evil?",
+    "why do we whisper near sleeping people we don't even know?",
+    "why does Monday feel longer than Sunday?",
+    "why do we feel guilty for resting?",
+    "can you be lonely at a party?",
+    "why does the fridge sound like that?",
+    "is being a “good listener” just being too tired to interrupt?",
+    "is being on time just being early but scared?",
+    "when did “fine” become a feeling?",
+    "why do we feel watched in empty rooms?",
+    "why do we hate the sound of our own voice?",
+    "is laughing at your own jokes self-care or a red flag?",
+    "why does everyone secretly think they're the main character?",
+    "why does my body think sneezing is a good idea?",
+    "why are toes shaped like that?",
+    "when you scratch an itch, who wins?",
+    "why do we say “ouch” before it hurts?",
+    "why does soup feel like an event?",
+    "why does water taste different in different cups?",
+    "is a Pop Tart a ravioli?",
+    "why does food taste better when someone else makes it?",
+    "if angels exist, are they on LinkedIn?",
+    "is prayer just talking to yourself with extra steps?",
+    "if God made everything, did he make boredom too?",
+    "if heaven exists, do they have wifi?",
+    "did Jesus have a favorite apostle?",
+    "is karma a tracking app?",
+    "is “deep” just “weird” with a candle?",
+    "is philosophy just overthinking with footnotes?",
+    "does Socrates get royalties?",
+    "can a question be too dumb to be philosophy?",
+    "if you ask “why?” enough times, does it just become “shut up”?",
+    "is procrastination just disagreeing with your future self?",
+    "is humility just confidence with a discount?",
+    "if your shadow was real, would it like you?",
+    "can a song save you?",
+    "is being “chill” a personality or a withdrawal symptom?"
+  ];
+
+  const buttonLabels = [
+    "hit me with another one",
+    "deeper",
+    "next existential crisis",
+    "again",
+    "hm, no",
+    "give me something heavier",
+    "another, please",
+    "ponder this instead",
+    "try me",
+    "next thought, please"
+  ];
+
+  const questionEl = document.getElementById("question");
+  const buttonEl = document.getElementById("more");
+
+  let lastIndex = -1;
+  let lastLabelIndex = -1;
+
+  function pickDifferent(arr, lastIdx) {
+    if (arr.length <= 1) return 0;
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * arr.length);
+    } while (idx === lastIdx);
+    return idx;
+  }
+
+  function rollButton() {
+    lastLabelIndex = pickDifferent(buttonLabels, lastLabelIndex);
+    buttonEl.textContent = buttonLabels[lastLabelIndex];
+  }
+
+  function setQuestion(initial = false) {
+    const nextIdx = pickDifferent(questions, lastIndex);
+    lastIndex = nextIdx;
+
+    if (initial) {
+      questionEl.textContent = questions[nextIdx];
+      return;
+    }
+
+    questionEl.classList.add("fading");
+    setTimeout(() => {
+      questionEl.textContent = questions[nextIdx];
+      questionEl.classList.remove("fading");
+    }, 150);
+  }
+
+  buttonEl.addEventListener("click", () => {
+    setQuestion(false);
+    rollButton();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      if (document.activeElement === buttonEl && e.key === "Enter") return;
+      e.preventDefault();
+      buttonEl.click();
+    }
+  });
+
+  setQuestion(true);
+</script>
+</body>
+</html>
