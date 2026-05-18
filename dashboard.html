@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Trudy profile analysis — psychometric and linguistic insights from natural language">
+  <title>Trudy · Profile Analysis</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366F1'/%3E%3Cpath d='M20 22h24M32 22v22' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    /* ---------- 1. Tokens ---------- */
+    :root {
+      --bg: #F4F4F6;
+      --bg-grid: rgba(15, 23, 42, 0.045);
+      --surface: #FFFFFF;
+      --surface-2: #F4F4F7;
+      --surface-3: #ECECF1;
+      --border: #E2E2E8;
+      --border-strong: #C9C9D2;
+      --ink: #0F172A;
+      --ink-2: #475569;
+      --ink-3: #94A3B8;
+      --ink-4: #CBD5E1;
+      --accent: #4F46E5;
+      --accent-2: #4338CA;
+      --accent-soft: #EEF2FF;
+      --accent-soft-2: #E0E7FF;
+      --signal: #06B6D4;
+
+      --disc-d: #DC2626;
+      --disc-i: #D97706;
+      --disc-s: #059669;
+      --disc-c: #2563EB;
+
+      --b5-o: #7C3AED;
+      --b5-c: #0284C7;
+      --b5-e: #D97706;
+      --b5-a: #059669;
+      --b5-n: #DC2626;
+
+      --goodfeel: #059669;
+      --badfeel: #DC2626;
+      --ambifeel: #D97706;
+      --neutral: #CBD5E1;
+
+      --ok: #059669;
+      --warn: #D97706;
+      --bad: #DC2626;
+
+      --radius: 6px;
+      --radius-sm: 4px;
+      --radius-xs: 3px;
+      --radius-pill: 999px;
+      --shadow: 0 0 0 1px rgba(15, 23, 42, 0.02);
+      --shadow-md: 0 1px 2px rgba(15, 23, 42, .04);
+      --shadow-lg: 0 2px 6px rgba(15, 23, 42, .05);
+
+      --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* ---------- 2. Reset + base ---------- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans);
+      font-feature-settings: 'cv11', 'ss01';
+      font-variant-numeric: tabular-nums;
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 1px 1px, var(--bg-grid) 1px, transparent 0);
+      background-size: 18px 18px;
+      background-attachment: fixed;
+      color: var(--ink);
+      font-size: 13.5px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    @supports (font-variation-settings: normal) {
+      body { font-family: 'Inter var', 'Inter', sans-serif; }
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    h1, h2, h3, h4, h5 { margin: 0; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+    p { margin: 0; }
+    .num, .kpi-val, .bar-val, .stat-val, .pill, .req-id,
+    .section-title-num, .hero-eyebrow, .hero-tag, .kpi-label, .stat-label,
+    .doughnut-center-val, .doughnut-center-lbl, .fp-val, .fp-name, .fp-val-suffix,
+    .stack-bar-seg, .stack-legend, .meta-strip, .brand-sub, .brand-mark,
+    .pair-bar-label-l, .pair-bar-label-r, .pair-bar-vals,
+    .donut-legend-item, .donut-legend-val,
+    .safety-label, .safety-status, .section-sub, .card-sub,
+    .kpi-val-suffix, .trait-chip, .anchor-nav a, .foot,
+    .disc-bar-row .bar-label {
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: 'tnum', 'zero';
+    }
+    .mono { font-family: var(--mono); }
+
+    /* ---------- 3. Layout primitives ---------- */
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px clamp(16px, 4vw, 48px) 80px;
+    }
+    section {
+      margin-top: 48px;
+      scroll-margin-top: 110px;
+    }
+    section:first-of-type { margin-top: 20px; }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title-num {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      background: var(--accent-soft);
+      padding: 3px 7px;
+      border-radius: 3px;
+      border: 1px solid var(--accent-soft-2);
+    }
+    .section-title-num::before { content: '§'; margin-right: 1px; }
+    .section-sub {
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-12 { grid-template-columns: repeat(12, 1fr); }
+    .col-2 { grid-column: span 2; }
+    .col-4 { grid-column: span 4; }
+    .col-5 { grid-column: span 5; }
+    .col-6 { grid-column: span 6; }
+    .col-7 { grid-column: span 7; }
+    .col-8 { grid-column: span 8; }
+    .col-12 { grid-column: span 12; }
+
+    /* ---------- 4. Top bar ---------- */
+    .topbar {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: saturate(180%) blur(10px);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .topbar-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 12px clamp(16px, 4vw, 48px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      width: 26px; height: 26px;
+      background: var(--ink);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: -0.04em;
+    }
+    .brand-name {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+    }
+    .brand-sub {
+      font-size: 10.5px;
+      color: var(--ink-3);
+      font-weight: 500;
+      padding-left: 12px;
+      border-left: 1px solid var(--border);
+      margin-left: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .meta-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10.5px;
+      color: var(--ink-2);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .meta-strip .dot {
+      width: 3px; height: 3px;
+      background: var(--border-strong);
+      border-radius: 50%;
+    }
+    .req-id {
+      font-size: 10.5px;
+      color: var(--ink-2);
+      background: var(--surface-2);
+      padding: 3px 7px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    /* ---------- 5. Anchor nav ---------- */
+    .anchor-nav {
+      position: sticky;
+      top: 51px;
+      background: rgba(244, 244, 246, 0.92);
+      backdrop-filter: saturate(180%) blur(8px);
+      -webkit-backdrop-filter: saturate(180%) blur(8px);
+      border-bottom: 1px solid var(--border);
+      z-index: 15;
+    }
+    .anchor-nav-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 clamp(16px, 4vw, 48px);
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .anchor-nav-inner::-webkit-scrollbar { display: none; }
+    .anchor-nav a {
+      padding: 11px 14px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--ink-2);
+      border-bottom: 1px solid transparent;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+      position: relative;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .anchor-nav a:hover { color: var(--ink); }
+    .anchor-nav a.active {
+      color: var(--ink);
+      border-bottom-color: var(--accent);
+      background: rgba(79, 70, 229, 0.04);
+    }
+
+    /* ---------- 6. Card ---------- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+    }
+    .card::before,
+    .card::after {
+      content: '';
+      position: absolute;
+      width: 8px; height: 8px;
+      border-color: var(--border-strong);
+      border-style: solid;
+      border-width: 0;
+      pointer-events: none;
+    }
+    .card::before { top: 4px; left: 4px; border-top-width: 1px; border-left-width: 1px; }
+    .card::after { bottom: 4px; right: 4px; border-bottom-width: 1px; border-right-width: 1px; }
+    .card-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .card-title {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .card-sub {
+      font-size: 10px;
+      color: var(--ink-3);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ---------- 7. Hero / archetype ---------- */
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before,
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      border-color: var(--accent);
+      border-style: solid;
+      border-width: 0;
+    }
+    .hero::before { top: 6px; left: 6px; border-top-width: 1px; border-left-width: 1px; }
+    .hero::after { bottom: 6px; right: 6px; border-bottom-width: 1px; border-right-width: 1px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 32px;
+      align-items: start;
+    }
+    .hero-eyebrow {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 18px; height: 1px;
+      background: var(--accent);
+    }
+    .hero-eyebrow::after {
+      content: '';
+      flex: 1;
+      max-width: 80px;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.25;
+    }
+    .hero-title {
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      margin: 0 0 6px;
+    }
+    .hero-tag {
+      font-size: 10.5px;
+      color: var(--ink-3);
+      font-weight: 500;
+      margin-bottom: 18px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hero-summary {
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--ink-2);
+      max-width: 640px;
+    }
+    .hero-traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 20px;
+    }
+    .trait-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .trait-chip-val {
+      color: var(--accent);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .trait-chip-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .hero-orb {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .hero-orb svg { width: 100%; height: 100%; }
+    .orb-ring {
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    /* ---------- 8. KPI cards ---------- */
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+    .kpi::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 14px; height: 2px;
+      background: var(--accent);
+    }
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kpi-label {
+      font-size: 10px;
+      color: var(--ink-2);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .kpi-icon {
+      width: 22px; height: 22px;
+      background: transparent;
+      color: var(--ink-3);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+    .kpi-val {
+      font-size: 36px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      color: var(--ink);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .kpi-val-suffix {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-3);
+    }
+    .kpi-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--ink-2);
+      gap: 12px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .kpi-bar {
+      height: 3px;
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+    .kpi-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ---------- 9. Pills (named bands) ---------- */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 7px;
+      border-radius: 3px;
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      line-height: 1.6;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .pill-very-high { background: rgba(79, 70, 229, 0.08); color: var(--accent-2); border-color: rgba(79, 70, 229, 0.30); }
+    .pill-high      { background: var(--accent-soft); color: var(--accent-2); border-color: var(--accent-soft-2); }
+    .pill-avg       { background: transparent; color: var(--ink-2); border-color: var(--border-strong); }
+    .pill-low       { background: transparent; color: var(--ink-3); border-color: var(--border); }
+    .pill-very-low  { background: transparent; color: var(--ink-3); border-color: var(--border); opacity: 0.7; }
+
+    /* ---------- 10. CSS bars ---------- */
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 1.5fr auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 5px 8px;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+    .bar-row.is-top { background: var(--accent-soft); }
+    .bar-row.is-bot { background: var(--surface-2); }
+    .bar-row:hover { background: var(--surface-2); }
+    .bar-row.is-top:hover { background: var(--accent-soft-2); }
+    .bar-label {
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: capitalize;
+    }
+    .bar-track {
+      height: 4px;
+      background: var(--surface-2);
+      position: relative;
+      overflow: hidden;
+    }
+    .bar-row.is-top .bar-track { background: rgba(79,70,229,0.14); }
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 2px;
+    }
+    .bar-val {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink);
+      text-align: right;
+      min-width: 28px;
+    }
+
+    .subfacets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px 18px;
+    }
+
+    /* DISC 4-bar breakdown */
+    .disc-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+    .disc-bar-row {
+      display: grid;
+      grid-template-columns: 110px 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+    .disc-bar-row .bar-label {
+      font-weight: 600;
+      font-size: 10.5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .disc-bar-row .bar-track { height: 6px; }
+    .disc-bar-row.d .bar-fill { background: var(--disc-d); }
+    .disc-bar-row.i .bar-fill { background: var(--disc-i); }
+    .disc-bar-row.s .bar-fill { background: var(--disc-s); }
+    .disc-bar-row.c .bar-fill { background: var(--disc-c); }
+
+    /* ---------- 11. DISC quadrant SVG ---------- */
+    .disc-svg-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 0 4px;
+    }
+    .disc-svg {
+      width: 100%;
+      max-width: 320px;
+      height: auto;
+      aspect-ratio: 1;
+      display: block;
+    }
+    .disc-axis-label {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      fill: var(--ink-3);
+    }
+    .disc-quad-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .disc-quad-tag {
+      font-family: var(--mono);
+      font-size: 7.5px;
+      font-weight: 500;
+      fill: var(--ink-3);
+      letter-spacing: 0.06em;
+    }
+    .disc-tick {
+      font-family: var(--mono);
+      font-size: 7px;
+      fill: var(--ink-3);
+    }
+
+    /* ---------- 12. Paired diverging bars ---------- */
+    .pair-bar { margin: 12px 0; }
+    .pair-bar-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .pair-bar-label-l, .pair-bar-label-r {
+      font-size: 10px;
+      color: var(--ink-2);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .pair-bar-label-l { text-align: right; }
+    .pair-bar-label-r { text-align: left; }
+    .pair-bar-track {
+      display: grid;
+      grid-template-columns: 1fr 2px 1fr;
+      height: 8px;
+      align-items: stretch;
+    }
+    .pair-bar-half-l, .pair-bar-half-r {
+      background: var(--surface-2);
+      overflow: hidden;
+      display: flex;
+    }
+    .pair-bar-half-l { justify-content: flex-end; }
+    .pair-bar-half-r { justify-content: flex-start; }
+    .pair-bar-divider { background: var(--ink-3); }
+    .pair-bar-seg-l { height: 100%; background: var(--ink-2); min-width: 2px; }
+    .pair-bar-seg-r { height: 100%; background: var(--accent); min-width: 2px; }
+    .pair-bar-vals {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-top: 4px;
+      gap: 8px;
+    }
+    .pair-bar-val-l { text-align: right; }
+
+    /* ---------- 13. Time orientation stacked ---------- */
+    .stack-bar {
+      display: flex;
+      height: 36px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--surface-2);
+      margin: 10px 0;
+    }
+    .stack-bar-seg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+      transition: width 0.5s;
+      letter-spacing: 0.04em;
+    }
+    .stack-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 10px;
+      color: var(--ink-2);
+      flex-wrap: wrap;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stack-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stack-legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+    }
+
+    /* ---------- 14. Chart wrappers ---------- */
+    .chart-wrap {
+      position: relative;
+      height: 300px;
+    }
+    .chart-wrap-sm { height: 230px; }
+    .chart-wrap-md { height: 270px; }
+    .chart-wrap-lg { height: 340px; }
+
+    /* Doughnut centerpiece */
+    .doughnut-wrap {
+      position: relative;
+      height: 260px;
+    }
+    .doughnut-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .doughnut-center-val {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .doughnut-center-lbl {
+      font-size: 9.5px;
+      color: var(--ink-3);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 4px;
+    }
+    .donut-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .donut-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .donut-legend-dot {
+      width: 8px; height: 8px;
+    }
+    .donut-legend-val {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    /* Emotion fingerprint */
+    .fingerprint {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .fp-cell {
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .fp-bar {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 2px;
+    }
+    .fp-name {
+      font-size: 9.5px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+    .fp-val {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.2;
+      margin-top: 4px;
+    }
+    .fp-val-suffix {
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--ink-3);
+    }
+
+    /* ---------- 15. Insight callout ---------- */
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .callout-icon {
+      flex-shrink: 0;
+      width: 18px; height: 18px;
+      background: var(--accent);
+      color: white;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 1px;
+      font-family: var(--mono);
+    }
+    .callout strong { font-weight: 600; color: var(--ink); }
+
+    /* ---------- 16. Safety pills ---------- */
+    .safety-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+    }
+    .safety-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 11px;
+    }
+    .safety-pill.warn { background: #FEF3C7; border-color: #FDE68A; }
+    .safety-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .safety-dot.ok { background: var(--ok); box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.16); }
+    .safety-dot.warn { background: var(--warn); box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.20); }
+    .safety-dot.bad { background: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.20); }
+    .safety-body { flex: 1; min-width: 0; }
+    .safety-label {
+      font-weight: 600;
+      color: var(--ink);
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .safety-status {
+      font-size: 10px;
+      color: var(--ink-3);
+      font-weight: 500;
+      margin-top: 2px;
+      letter-spacing: 0.04em;
+    }
+    .safety-pill.warn .safety-status { color: #92400E; }
+
+    /* Stats blocks */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .stat-block {
+      padding: 14px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+    }
+    .stat-label {
+      font-size: 9.5px;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .stat-val {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .stat-sub {
+      font-size: 10.5px;
+      color: var(--ink-3);
+      margin-top: 4px;
+    }
+
+    /* Footer */
+    .foot {
+      margin-top: 56px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 10.5px;
+      color: var(--ink-3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ---------- 17. Responsive ---------- */
+    @media (max-width: 1024px) {
+      .grid-12 { grid-template-columns: repeat(6, 1fr); }
+      .col-7, .col-5, .col-8, .col-4 { grid-column: span 6; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-orb { margin: 0 auto; }
+      .subfacets-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .grid-12 { grid-template-columns: 1fr; }
+      .col-2, .col-4, .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 1; }
+      .hero { padding: 22px; }
+      .hero-title { font-size: 26px; }
+      .kpi-val { font-size: 30px; }
+      section { margin-top: 36px; }
+      .meta-strip span:not(:nth-child(-n+2)) { display: none; }
+      .brand-sub { display: none; }
+      .subfacets-grid { grid-template-columns: 1fr; }
+      .fingerprint { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .bar-row { grid-template-columns: minmax(0, 1fr) 1fr auto auto; gap: 10px; padding: 5px 6px; }
+      .anchor-nav a { padding: 11px 9px; font-size: 9.5px; }
+      .container { padding: 20px 14px 60px; }
+      .hero-title { font-size: 22px; }
+      .section-title { font-size: 13px; }
+    }
+
+    /* ---------- 18. Print ---------- */
+    @media print {
+      .topbar, .anchor-nav { display: none; }
+      body {
+        background: white;
+        background-image: none;
+      }
+      .container { padding: 16px; max-width: none; }
+      section { page-break-inside: auto; margin-top: 24px; }
+      .card, .hero, .kpi {
+        page-break-inside: avoid;
+        border: 1px solid #DDD;
+      }
+      .hero { background: white; }
+      .callout { background: white; border: 1px solid #DDD; border-left: 3px solid var(--accent); }
+      @page { size: A4; margin: 16mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">T</span>
+        <span class="brand-name">Trudy</span>
+        <span class="brand-sub">Profile Analysis</span>
+      </div>
+      <div class="meta-strip" id="metaStrip">
+        <!-- Filled at runtime -->
+      </div>
+    </div>
+  </header>
+
+  <nav class="anchor-nav">
+    <div class="anchor-nav-inner">
+      <a href="#overview">Overview</a>
+      <a href="#kpi">Summary</a>
+      <a href="#personality">Personality</a>
+      <a href="#motivation">Motivation</a>
+      <a href="#cognition">Cognition</a>
+      <a href="#emotion">Emotion</a>
+      <a href="#topics">Topics</a>
+      <a href="#safety">Safety</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section id="overview">
+      <div class="hero" id="hero"></div>
+    </section>
+
+    <section id="kpi">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">01</span>Headline indicators</h2>
+        <span class="section-sub">Top-line LIWC scores · 0–100</span>
+      </div>
+      <div class="grid grid-4" id="kpiGrid"></div>
+    </section>
+
+    <section id="personality">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">02</span>Personality profile</h2>
+        <span class="section-sub">Big Five · DISC · 30 sub-facets</span>
+      </div>
+      <div id="personalityCallout"></div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Big Five</div>
+            <div class="card-sub">OCEAN · 0–100</div>
+          </div>
+          <div class="chart-wrap chart-wrap-md"><canvas id="bigFiveChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">DISC behavioural profile</div>
+            <div class="card-sub" id="discArchetypeSub">—</div>
+          </div>
+          <div class="disc-svg-wrap" id="discQuad"></div>
+          <div class="disc-bars" id="discBars"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top: 24px;">
+        <div class="card-head">
+          <div class="card-title">Sub-facets</div>
+          <div class="card-sub">30 traits · ranked high → low · top-5 and bottom-5 highlighted</div>
+        </div>
+        <div class="subfacets-grid" id="subfacets"></div>
+      </div>
+    </section>
+
+    <section id="motivation">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">03</span>Motivation</h2>
+        <span class="section-sub">What moves this person</span>
+      </div>
+      <div id="motivationCallout"></div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Drives</div>
+            <div class="card-sub">Core motivators</div>
+          </div>
+          <div id="drives"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Needs</div>
+            <div class="card-sub">Psychological needs · sorted</div>
+          </div>
+          <div id="needs"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Values</div>
+            <div class="card-sub">Schwartz framework</div>
+          </div>
+          <div class="chart-wrap chart-wrap-md"><canvas id="valuesChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cognition">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">04</span>Cognition &amp; communication style</h2>
+        <span class="section-sub">How this person thinks and expresses</span>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Cognitive markers</div>
+            <div class="card-sub">% of analysed text</div>
+          </div>
+          <div id="cognitionBars"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Communication style</div>
+            <div class="card-sub">Linguistic orientation pairs</div>
+          </div>
+          <div id="pairBars"></div>
+          <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border);">
+            <div class="card-sub" style="margin-bottom: 8px;">Aesthetic / allure language</div>
+            <div id="allureBar"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="emotion">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">05</span>Emotion &amp; tone</h2>
+        <span class="section-sub">Emotional posture in language</span>
+      </div>
+      <div id="emotionCallout"></div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Emotional palette</div>
+            <div class="card-sub">SALLEE · proportion of expression</div>
+          </div>
+          <div class="doughnut-wrap">
+            <canvas id="emotionDonut"></canvas>
+            <div class="doughnut-center">
+              <div class="doughnut-center-val" id="donutCenterVal">—</div>
+              <div class="doughnut-center-lbl">Emotional</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="donutLegend"></div>
+          <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border);">
+            <div class="card-sub" style="margin-bottom: 10px;">Specific emotions · fingerprint</div>
+            <div class="fingerprint" id="fingerprint"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Temporal &amp; attentional focus</div>
+            <div class="card-sub">Where attention is directed</div>
+          </div>
+          <div style="font-size: 12px; color: var(--ink-2); margin-bottom: 4px; font-weight: 500;">Time orientation</div>
+          <div class="card-sub" style="margin-bottom: 4px;">Distribution of time-referencing language</div>
+          <div class="stack-bar" id="timeStack"></div>
+          <div class="stack-legend" id="timeLegend"></div>
+          <div style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--border);">
+            <div style="font-size: 12px; color: var(--ink-2); margin-bottom: 4px; font-weight: 500;">Self vs external focus</div>
+            <div class="card-sub" style="margin-bottom: 14px;">Inward reflection vs outward orientation</div>
+            <div id="focusPair"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="topics">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">06</span>Topic focus</h2>
+        <span class="section-sub">What this person talks about</span>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Topical language</div>
+          <div class="card-sub">LIWC topical categories · % of analysed text</div>
+        </div>
+        <div id="topics-grid" class="subfacets-grid"></div>
+      </div>
+    </section>
+
+    <section id="safety">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-title-num">07</span>Safety &amp; text statistics</h2>
+        <span class="section-sub">Toxicity screen and analysed corpus stats</span>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Toxicity screen</div>
+            <div class="card-sub">Likelihood across categories</div>
+          </div>
+          <div class="safety-grid" id="safetyGrid"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Analysed corpus</div>
+            <div class="card-sub">Sample volume and structure</div>
+          </div>
+          <div class="stat-grid" id="statGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="foot">
+      <div>Trudy <span class="mono">v1.0.0</span> · profile analysis · language <span class="mono">en</span></div>
+      <div>Request <span class="mono req-id" id="footReqId">—</span></div>
+    </div>
+  </main>
+
+  <script>
+    /* ============================================================
+     * 1. DATA (hardcoded JSON sample)
+     * ============================================================ */
+    const DATA = {
+      "additional_indicators": {
+        "external_focus": 0.05978260869565217,
+        "focus_future": 0.014502441292722622,
+        "focus_past": 0.030603348058591027,
+        "focus_present": 0.12171588002790049,
+        "self_focus": 0.04661706579865148
+      },
+      "cognition": {
+        "analytical_thinking": 0.42619059968164824,
+        "causation": 0.023163217856312486,
+        "certainty": 0.01438618925831202,
+        "cognitive_processes": 0.13772959776796093,
+        "comparisons": 0.02496512438967682,
+        "differentiation": 0.03382934201348524,
+        "discrepancies": 0.018861892583120203,
+        "insight": 0.03885724250174378,
+        "tentative": 0.027784236224133924
+      },
+      "disc_dimensions": {
+        "bold_assertive_outgoing": 79.25804644749881,
+        "c_axis": 37.34391070992374,
+        "c_axis_proportional": 0.16018319924457045,
+        "calm_methodical_reserved": 20.75398535114175,
+        "d_axis": 72.97779293095701,
+        "d_axis_proportional": 0.31303139181890904,
+        "i_axis": 81.23933035543672,
+        "i_axis_proportional": 0.3484684810303569,
+        "people_relationship_emotion_focus": 83.27014218009478,
+        "s_axis": 41.57147232169169,
+        "s_axis_proportional": 0.17831692790616369,
+        "task_system_object_focus": 67.19517449375269
+      },
+      "drives": {
+        "achievement": 74.18823008466417,
+        "affiliation": 55.33164341517851,
+        "power": 71.59395397687165,
+        "reward": 57.52608586622906,
+        "risk_aversion": 38.60382355375321,
+        "risk_seeking": 46.784738889348674
+      },
+      "language": "en",
+      "liwc": {
+        "achievement": 0.021593815391769355,
+        "analytical_thinking": 0.42619059968164824,
+        "authentic": 0.527187475780826,
+        "clout": 0.7058146862397677,
+        "emotional_tone": 0.7443168505448845,
+        "six_plus_words": 0.2255580097651709,
+        "money": 0.005231341548477098,
+        "work": 0.049843059753545686,
+        "leisure": 0.008137642408742153,
+        "home": 0.0019181585677749361,
+        "family": 0.0010462683096954196,
+        "friends": 0.003400372006510114,
+        "health": 0.005115089514066497,
+        "body": 0.003778191118344571,
+        "religion": 0.0016565914903510811,
+        "death": 0.00020344106021855384,
+        "sexual": 0.0008428272494768658,
+        "affiliation": 0.021157870262729597,
+        "power": 0.025866077656358986,
+        "reward": 0.01589746570564985,
+        "risk": 0.003138804929086259,
+        "informal_language": 0.0077016972797023945,
+        "swear_words": 0.00017437805161590327,
+        "netspeak": 0.0007556382236689142
+      },
+      "liwc_extension": {
+        "absolutist": 0.01165426644966287,
+        "abstract": 0.379243199255987,
+        "action": 0.11831550802139038,
+        "agentic": 0.04914554754708207,
+        "allure": 0.08593931643803766,
+        "approach": 0.21706729474335773,
+        "avoidance": 0.05453579829095882,
+        "communal": 0.02589514066496164,
+        "concrete": 0.2394791908858405,
+        "high_empathy": 0.12232620320855615,
+        "inaction": 0.006626365961404325,
+        "low_empathy": 0.23009183910718436
+      },
+      "needs": {
+        "challenge": 68.63418201185247,
+        "closeness": 42.62045939098549,
+        "curiosity": 83.74496033627774,
+        "excitement": 74.4385657785141,
+        "harmony": 69.05285717533953,
+        "ideal": 65.03169882287304,
+        "liberty": 57.408292231743,
+        "love": 68.65552063837067,
+        "practicality": 48.55238087861063,
+        "self_expression": 49.61426469705083,
+        "stability": 39.52137168508121,
+        "structure": 40.52893960917694
+      },
+      "personality": {
+        "active": 44.13698601522532,
+        "adventurous": 52.67352402763231,
+        "aggressive": 42.02717954222577,
+        "agreeableness": 55.30674202279204,
+        "ambitious": 62.941314912560905,
+        "anxiety_prone": 55.914697729551314,
+        "artistic": 54.9062274937129,
+        "assertive": 65.09140606862142,
+        "cautious": 49.79116627188057,
+        "cheerful": 72.05183524651976,
+        "conscientiousness": 54.32349699576859,
+        "cooperative": 59.44961026887406,
+        "disciplined": 54.7718625624481,
+        "dutiful": 46.40576606404865,
+        "emotionally_aware": 58.877403464372044,
+        "empathetic": 46.74224004766957,
+        "energetic": 52.32830815938688,
+        "extraversion": 60.969159090463904,
+        "friendly": 62.70343769889141,
+        "generous": 59.68450573726898,
+        "genuine": 47.275760931396285,
+        "humble": 52.74391393825858,
+        "imaginative": 58.51028284887449,
+        "impulsive": 51.631664849229296,
+        "intellectual": 61.610924245630336,
+        "liberal": 52.42536194273558,
+        "melancholy": 32.81803676885535,
+        "neuroticism": 44.12138995997202,
+        "openness": 57.5812580810342,
+        "organized": 55.21259776213056,
+        "self_assured": 51.89273656408492,
+        "self_conscious": 46.25355798467054,
+        "sociable": 65.70919774096888,
+        "stress_prone": 61.32283175356597,
+        "trusting": 59.11748344760195
+      },
+      "request_id": "b6a82cbe23f3a94390bcab86ae3195db",
+      "response_id": "02cf924e-75f4-4cc1-b7d4-80b7c07215da",
+      "sallee": {
+        "admiration": 0.05434905944247909,
+        "ambifeel": 0.06792585587224542,
+        "amusement": 0.0018399414370514659,
+        "anger": 0.01899360521151073,
+        "badfeel": 0.0700164778177079,
+        "boredom": 0.006976230912490422,
+        "calmness": 0.013915137907296742,
+        "curiosity": 0.0213891055027269,
+        "disgust": 0.010295617512617804,
+        "emotionality": 0.29413443932933936,
+        "excitement": 0.01759937411824549,
+        "fear": 0.024652233065643243,
+        "goodfeel": 0.16358252053346106,
+        "gratitude": 0.01899313644364767,
+        "joy": 0.029285334708323237,
+        "love": 0.045192125945996045,
+        "non_emotion": 0.7058655606706606,
+        "sadness": 0.018869423089672738,
+        "sentiment": 0.09356604271575317,
+        "surprise": 0.005009749726995629
+      },
+      "social_dynamics": {
+        "affiliation": 55.33164341517851,
+        "authentic": 33.54896823344246,
+        "clout": 90.32653648395568,
+        "inward_focus": 24.36241183852159,
+        "negations": 36.06851515704008,
+        "outward_focus": 88.79417363237606,
+        "social": 75.00666544312105
+      },
+      "summary": {
+        "capitals": 0.021052199606040708,
+        "emojis": 0,
+        "emoticons": 0,
+        "hashtags": 0,
+        "sentence_count": 1718,
+        "six_plus_words": 0.2255580097651709,
+        "urls": 0,
+        "word_count": 34408,
+        "words_per_sentence": 20.027939464493596
+      },
+      "toxicity_likelihood": {
+        "hate_speech": 0,
+        "offensive": 0.46358259417541287,
+        "threat": 0.00027280617127232814,
+        "toxicity": 0
+      },
+      "toxicity_measures": {
+        "swears": 0.00023250406882120437,
+        "violence": 0.0009881422924901185,
+        "direct_insults": 0.0009881422924901185
+      },
+      "values": {
+        "conservative": 40.08717414396888,
+        "hedonism": 54.89053993383275,
+        "open_to_change": 69.5612336803035,
+        "self_enhancement": 62.632452451277665,
+        "self_transcendence": 68.76566302601336
+      },
+      "version": "v1.0.0"
+    };
+
+    /* ============================================================
+     * 2. Helpers
+     * ============================================================ */
+    const pct100 = v => Math.round(v * 100);
+    const round0 = v => Math.round(v);
+    const round1 = v => Math.round(v * 10) / 10;
+    const titleCase = s => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const sortDesc = arr => arr.slice().sort((a, b) => b.value - a.value);
+    const sortAsc = arr => arr.slice().sort((a, b) => a.value - b.value);
+    const fmtNum = n => n.toLocaleString('en-US');
+
+    /** Map a 0-100 value to a named band. */
+    function band(v) {
+      if (v >= 80) return { name: 'Very High', cls: 'pill-very-high' };
+      if (v >= 65) return { name: 'High',      cls: 'pill-high' };
+      if (v >= 45) return { name: 'Average',   cls: 'pill-avg' };
+      if (v >= 30) return { name: 'Low',       cls: 'pill-low' };
+      return { name: 'Very Low', cls: 'pill-very-low' };
+    }
+
+    function pillEl(value) {
+      const b = band(value);
+      return `<span class="pill ${b.cls}">${b.name}</span>`;
+    }
+
+    /** Build an entries array for a 0-100 object, sorted descending. */
+    function entries0to100(obj, excludeKeys = []) {
+      const ex = new Set(excludeKeys);
+      return Object.entries(obj)
+        .filter(([k]) => !ex.has(k))
+        .map(([key, value]) => ({ key, label: titleCase(key), value }));
+    }
+
+    /** Build entries from a 0-1 LIWC object, normalised to 0-100. */
+    function entriesPct(obj, keys) {
+      return keys.map(k => ({
+        key: k,
+        label: titleCase(k),
+        value: pct100(obj[k] || 0),
+        raw: obj[k] || 0,
+      }));
+    }
+
+    /* ============================================================
+     * 3. Archetype derivation + insight rules
+     * ============================================================ */
+    const ARCHETYPES = {
+      DI: { name: 'Inspirational Driver',   tag: 'Bold · Persuasive · People-engaging' },
+      ID: { name: 'Inspirational Influencer', tag: 'Sociable · Energetic · Ambitious' },
+      DC: { name: 'Strategic Driver',       tag: 'Decisive · Analytical · Task-focused' },
+      CD: { name: 'Methodical Pioneer',     tag: 'Precise · Driven · Detail-oriented' },
+      IS: { name: 'Warm Connector',         tag: 'Warm · Steady · People-oriented' },
+      SI: { name: 'Supportive Optimist',    tag: 'Patient · Friendly · Collaborative' },
+      SC: { name: 'Diligent Custodian',     tag: 'Reliable · Methodical · Loyal' },
+      CS: { name: 'Quiet Specialist',       tag: 'Careful · Steady · Focused' },
+      DS: { name: 'Determined Implementer', tag: 'Driven · Steady · Resolute' },
+      SD: { name: 'Steady Pacesetter',      tag: 'Reliable · Capable · Grounded' },
+      IC: { name: 'Charismatic Strategist', tag: 'Engaging · Thoughtful · Articulate' },
+      CI: { name: 'Polished Communicator',  tag: 'Refined · Articulate · Persuasive' },
+    };
+
+    function deriveArchetype() {
+      const axes = [
+        { k: 'D', v: DATA.disc_dimensions.d_axis },
+        { k: 'I', v: DATA.disc_dimensions.i_axis },
+        { k: 'S', v: DATA.disc_dimensions.s_axis },
+        { k: 'C', v: DATA.disc_dimensions.c_axis },
+      ].sort((a, b) => b.v - a.v);
+      const code = axes[0].k + axes[1].k;
+      const meta = ARCHETYPES[code] || { name: 'Balanced Communicator', tag: 'Versatile · Adaptive' };
+      return { code, top: axes[0], second: axes[1], ...meta };
+    }
+
+    /** Generate a one-sentence summary from top/bottom personality traits. */
+    function deriveSummary() {
+      const bigFive = new Set(['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism']);
+      const facets = entries0to100(DATA.personality, [...bigFive]);
+      const top = sortDesc(facets).slice(0, 5);
+      const bot = sortAsc(facets).slice(0, 2);
+
+      const tone = pct100(DATA.liwc.emotional_tone);
+      const clout = pct100(DATA.liwc.clout);
+      const analytical = pct100(DATA.liwc.analytical_thinking);
+
+      const toneDesc = tone >= 65 ? 'a confidently positive tone'
+        : tone >= 45 ? 'a measured, balanced tone'
+        : 'a sober, restrained tone';
+      const cloutDesc = clout >= 65 ? 'high social authority'
+        : clout >= 45 ? 'a steady, conversational register'
+        : 'a humble, peer-level voice';
+      const analyticDesc = analytical >= 65 ? 'a strongly analytical register'
+        : analytical >= 45 ? 'a balanced narrative–analytical register'
+        : 'a narrative, story-driven register';
+
+      const topNames = top.map(t => t.label.toLowerCase());
+      const botNames = bot.map(t => t.label.toLowerCase());
+
+      return `Tends to come across as <strong>${topNames[0]}</strong>, <strong>${topNames[1]}</strong>, and <strong>${topNames[2]}</strong>, with notable ${topNames[3]} and ${topNames[4]}. Communicates with ${toneDesc} and ${cloutDesc}, in ${analyticDesc} — and shows less ${botNames[0]} or ${botNames[1]} than typical.`;
+    }
+
+    /* ============================================================
+     * 4. Chart.js global defaults
+     * ============================================================ */
+    Chart.defaults.font.family = "'IBM Plex Mono', ui-monospace, monospace";
+    Chart.defaults.font.size = 10.5;
+    Chart.defaults.color = '#475569';
+    Chart.defaults.borderColor = '#E2E2E8';
+    Chart.defaults.animation.duration = 380;
+    Chart.defaults.animation.easing = 'easeOutQuart';
+    Chart.defaults.plugins.tooltip.backgroundColor = '#0F172A';
+    Chart.defaults.plugins.tooltip.titleColor = '#FFFFFF';
+    Chart.defaults.plugins.tooltip.bodyColor = '#CBD5E1';
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 3;
+    Chart.defaults.plugins.tooltip.boxPadding = 6;
+    Chart.defaults.plugins.tooltip.titleFont = { family: "'IBM Plex Mono', monospace", weight: '600', size: 11 };
+    Chart.defaults.plugins.tooltip.bodyFont = { family: "'IBM Plex Mono', monospace", weight: '500', size: 11 };
+    Chart.defaults.plugins.legend.display = false;
+
+    /* ============================================================
+     * 5. Section renderers
+     * ============================================================ */
+
+    /* ---------- Meta strip ---------- */
+    function renderMeta() {
+      const w = fmtNum(DATA.summary.word_count);
+      const s = fmtNum(DATA.summary.sentence_count);
+      const reqShort = DATA.request_id.slice(0, 8);
+      document.getElementById('metaStrip').innerHTML = `
+        <span>LANG · EN</span>
+        <span class="dot"></span>
+        <span>N=${w} W · ${s} S</span>
+        <span class="dot"></span>
+        <span>v${DATA.version}</span>
+        <span class="dot"></span>
+        <span class="req-id">${reqShort}</span>
+      `;
+      document.getElementById('footReqId').textContent = DATA.request_id;
+    }
+
+    /* ---------- Hero ---------- */
+    function renderHero() {
+      const a = deriveArchetype();
+      const summary = deriveSummary();
+      const tone = pct100(DATA.liwc.emotional_tone);
+      const clout = pct100(DATA.liwc.clout);
+
+      // Five top personality chips
+      const bigFive = new Set(['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism']);
+      const top = sortDesc(entries0to100(DATA.personality, [...bigFive])).slice(0, 5);
+
+      const chips = top.map(t => `
+        <span class="trait-chip">
+          <span class="trait-chip-dot"></span>
+          ${t.label}
+          <span class="trait-chip-val">${round0(t.value)}</span>
+        </span>
+      `).join('');
+
+      // Orb visualization: 4 concentric rings sized by D/I/S/C
+      const orb = `
+        <div class="hero-orb">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="orbGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E2E8" stroke-width="0.4"/>
+              </pattern>
+            </defs>
+            <rect x="6" y="6" width="188" height="188" fill="#FFFFFF" stroke="#C9C9D2" stroke-width="0.75"/>
+            <rect x="6" y="6" width="188" height="188" fill="url(#orbGrid)"/>
+            <line x1="100" y1="6" x2="100" y2="194" stroke="#C9C9D2" stroke-width="0.5" stroke-dasharray="1 3"/>
+            <line x1="6" y1="100" x2="194" y2="100" stroke="#C9C9D2" stroke-width="0.5" stroke-dasharray="1 3"/>
+            <circle class="orb-ring" cx="100" cy="100" r="${18 + 0.62 * DATA.disc_dimensions.d_axis}" stroke="rgba(220,38,38,0.65)" stroke-dasharray="3 2"/>
+            <circle class="orb-ring" cx="100" cy="100" r="${18 + 0.62 * DATA.disc_dimensions.i_axis}" stroke="rgba(217,119,6,0.65)" stroke-dasharray="3 2"/>
+            <circle class="orb-ring" cx="100" cy="100" r="${18 + 0.62 * DATA.disc_dimensions.s_axis}" stroke="rgba(5,150,105,0.65)" stroke-dasharray="3 2"/>
+            <circle class="orb-ring" cx="100" cy="100" r="${18 + 0.62 * DATA.disc_dimensions.c_axis}" stroke="rgba(37,99,235,0.65)" stroke-dasharray="3 2"/>
+            <circle cx="100" cy="100" r="22" fill="#FFFFFF" stroke="#0F172A" stroke-width="1"/>
+            <text x="100" y="96" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" font-weight="600" fill="#94A3B8" letter-spacing="0.14em">DISC ·</text>
+            <text x="100" y="110" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" font-weight="700" fill="#0F172A" letter-spacing="-0.02em">${a.code}</text>
+            <text x="14" y="18" font-family="IBM Plex Mono" font-size="7" fill="#94A3B8" letter-spacing="0.1em">FIG.01</text>
+          </svg>
+        </div>
+      `;
+
+      document.getElementById('hero').innerHTML = `
+        <div class="hero-grid">
+          <div>
+            <div class="hero-eyebrow">Archetype · DISC ${a.code}</div>
+            <h1 class="hero-title">${a.name}</h1>
+            <div class="hero-tag">${a.tag} · Tone ${tone} · Clout ${clout}</div>
+            <p class="hero-summary">${summary}</p>
+            <div class="hero-traits">${chips}</div>
+          </div>
+          ${orb}
+        </div>
+      `;
+
+      document.getElementById('discArchetypeSub').textContent = `${a.code} · ${a.name}`;
+    }
+
+    /* ---------- KPI strip ---------- */
+    function renderKPIs() {
+      const items = [
+        {
+          label: 'Emotional Tone',
+          val: pct100(DATA.liwc.emotional_tone),
+          icon: '◉',
+          hint: 'Positive – Negative',
+        },
+        {
+          label: 'Clout',
+          val: pct100(DATA.liwc.clout),
+          icon: '⌘',
+          hint: 'Confidence / authority',
+        },
+        {
+          label: 'Analytical Thinking',
+          val: pct100(DATA.liwc.analytical_thinking),
+          icon: '∆',
+          hint: 'Formal · logical',
+        },
+        {
+          label: 'Authenticity',
+          val: round0(DATA.social_dynamics.authentic),
+          icon: '✦',
+          hint: 'Personal · unguarded',
+        },
+      ];
+      document.getElementById('kpiGrid').innerHTML = items.map(it => `
+        <div class="kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">${it.label}</span>
+            <span class="kpi-icon">${it.icon}</span>
+          </div>
+          <div class="kpi-val">${it.val}<span class="kpi-val-suffix">/100</span></div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${it.val}%"></div></div>
+          <div class="kpi-meta">
+            <span>${it.hint}</span>
+            ${pillEl(it.val)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* ---------- Big Five radar ---------- */
+    function renderBigFive() {
+      const fields = ['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism'];
+      const colors = {
+        openness:          '#7C3AED',
+        conscientiousness: '#0284C7',
+        extraversion:      '#D97706',
+        agreeableness:     '#059669',
+        neuroticism:       '#DC2626',
+      };
+      const data = fields.map(f => DATA.personality[f]);
+      const ctx = document.getElementById('bigFiveChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: fields.map(f => f.charAt(0).toUpperCase() + f.slice(1).toUpperCase()),
+          datasets: [{
+            label: 'Big Five',
+            data,
+            fill: true,
+            backgroundColor: 'rgba(79, 70, 229, 0.12)',
+            borderColor: '#4F46E5',
+            borderWidth: 1.5,
+            pointBackgroundColor: fields.map(f => colors[f]),
+            pointBorderColor: '#FFFFFF',
+            pointBorderWidth: 1.5,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              suggestedMin: 0,
+              suggestedMax: 100,
+              ticks: { display: false, stepSize: 20 },
+              grid: { color: '#ECECF1' },
+              angleLines: { color: '#ECECF1' },
+              pointLabels: {
+                font: { size: 12, weight: '500' },
+                color: '#475569',
+              },
+            },
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.label}: ${Math.round(ctx.parsed.r)} / 100`,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    /* ---------- DISC quadrant SVG + bar breakdown ---------- */
+    function renderDISC() {
+      const d = DATA.disc_dimensions;
+      // Chart inner area: 20→300 in each axis (280px wide).
+      // X: people focus (0 task → 100 people), Y: 100 - bold_assertive (high bold = top)
+      const px = d.people_relationship_emotion_focus;
+      const py = 100 - d.bold_assertive_outgoing;
+      const cx = 20 + (px / 100) * 280;
+      const cy = 20 + (py / 100) * 280;
+
+      const qO = 0.045;
+      const svg = `
+        <svg class="disc-svg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="discGrid" width="28" height="28" patternUnits="userSpaceOnUse">
+              <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#E2E2E8" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+
+          <!-- Inner plot frame -->
+          <rect x="20" y="20" width="280" height="280" fill="#FFFFFF" stroke="#C9C9D2" stroke-width="1"/>
+          <rect x="20" y="20" width="280" height="280" fill="url(#discGrid)"/>
+
+          <!-- Quadrant tints -->
+          <rect x="20"  y="20"  width="140" height="140" fill="#DC2626" fill-opacity="${qO}"/>
+          <rect x="160" y="20"  width="140" height="140" fill="#D97706" fill-opacity="${qO}"/>
+          <rect x="20"  y="160" width="140" height="140" fill="#2563EB" fill-opacity="${qO}"/>
+          <rect x="160" y="160" width="140" height="140" fill="#059669" fill-opacity="${qO}"/>
+
+          <!-- Crosshair -->
+          <line x1="160" y1="20" x2="160" y2="300" stroke="#C9C9D2" stroke-width="1"/>
+          <line x1="20" y1="160" x2="300" y2="160" stroke="#C9C9D2" stroke-width="1"/>
+
+          <!-- Tick marks at 25, 50, 75 on each axis -->
+          <g stroke="#94A3B8" stroke-width="0.75">
+            <line x1="90" y1="156" x2="90" y2="164"/>
+            <line x1="230" y1="156" x2="230" y2="164"/>
+            <line x1="156" y1="90" x2="164" y2="90"/>
+            <line x1="156" y1="230" x2="164" y2="230"/>
+          </g>
+          <g class="disc-tick">
+            <text x="90"  y="176" text-anchor="middle">25</text>
+            <text x="230" y="176" text-anchor="middle">75</text>
+            <text x="148" y="93"  text-anchor="end">75</text>
+            <text x="148" y="233" text-anchor="end">25</text>
+            <text x="172" y="158" text-anchor="start">50</text>
+          </g>
+
+          <!-- Quadrant labels (in corners) -->
+          <text x="30" y="36" class="disc-quad-label" fill="#DC2626">D · DOMINANCE</text>
+          <text x="30" y="48" class="disc-quad-tag">BOLD · TASK</text>
+
+          <text x="290" y="36" class="disc-quad-label" fill="#D97706" text-anchor="end">INFLUENCE · I</text>
+          <text x="290" y="48" class="disc-quad-tag" text-anchor="end">BOLD · PEOPLE</text>
+
+          <text x="30" y="278" class="disc-quad-tag">CALM · TASK</text>
+          <text x="30" y="290" class="disc-quad-label" fill="#2563EB">C · COMPLIANCE</text>
+
+          <text x="290" y="278" class="disc-quad-tag" text-anchor="end">CALM · PEOPLE</text>
+          <text x="290" y="290" class="disc-quad-label" fill="#059669" text-anchor="end">STEADINESS · S</text>
+
+          <!-- Axis end labels (outside frame) -->
+          <text x="160" y="13" class="disc-axis-label" text-anchor="middle">BOLD ▲</text>
+          <text x="160" y="316" class="disc-axis-label" text-anchor="middle">▼ RESERVED</text>
+          <text x="13" y="163" class="disc-axis-label" text-anchor="middle" transform="rotate(-90 13 163)">◀ TASK</text>
+          <text x="307" y="163" class="disc-axis-label" text-anchor="middle" transform="rotate(-90 307 163)">PEOPLE ▶</text>
+
+          <!-- The dot -->
+          <g transform="translate(${cx} ${cy})">
+            <circle r="18" fill="#4F46E5" fill-opacity="0.15">
+              <animate attributeName="r" values="14;22;14" dur="2.8s" repeatCount="indefinite"/>
+              <animate attributeName="fill-opacity" values="0.20;0.05;0.20" dur="2.8s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="6" fill="#4F46E5" stroke="#FFFFFF" stroke-width="2"/>
+            <line x1="-10" y1="0" x2="-4" y2="0" stroke="#4F46E5" stroke-width="1"/>
+            <line x1="4" y1="0" x2="10" y2="0" stroke="#4F46E5" stroke-width="1"/>
+            <line x1="0" y1="-10" x2="0" y2="-4" stroke="#4F46E5" stroke-width="1"/>
+            <line x1="0" y1="4" x2="0" y2="10" stroke="#4F46E5" stroke-width="1"/>
+            <text x="0" y="-14" text-anchor="middle" class="disc-tick" fill="#4F46E5" font-weight="700">PF·${Math.round(px)} / BA·${Math.round(d.bold_assertive_outgoing)}</text>
+          </g>
+        </svg>
+      `;
+      document.getElementById('discQuad').innerHTML = svg;
+
+      // 4-bar breakdown
+      const rows = [
+        { axis: 'd', label: 'D · Dominance', val: d.d_axis },
+        { axis: 'i', label: 'I · Influence', val: d.i_axis },
+        { axis: 's', label: 'S · Steadiness', val: d.s_axis },
+        { axis: 'c', label: 'C · Compliance', val: d.c_axis },
+      ];
+      document.getElementById('discBars').innerHTML = rows.map(r => `
+        <div class="disc-bar-row ${r.axis}">
+          <span class="bar-label">${r.label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${r.val}%"></div></div>
+          <span class="bar-val">${round0(r.val)}</span>
+        </div>
+      `).join('');
+    }
+
+    /* ---------- Personality sub-facets ---------- */
+    function renderSubfacets() {
+      const bigFive = new Set(['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism']);
+      const facets = sortDesc(entries0to100(DATA.personality, [...bigFive]));
+      const topIds = new Set(facets.slice(0, 5).map(f => f.key));
+      const botIds = new Set(facets.slice(-5).map(f => f.key));
+
+      document.getElementById('subfacets').innerHTML = facets.map(f => {
+        const cls = topIds.has(f.key) ? 'is-top' : (botIds.has(f.key) ? 'is-bot' : '');
+        return `
+          <div class="bar-row ${cls}">
+            <span class="bar-label">${f.label}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${f.value}%"></div></div>
+            <span class="bar-val">${round0(f.value)}</span>
+            ${pillEl(f.value)}
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ---------- Motivation: drives, needs, values ---------- */
+    function renderMotivation() {
+      // Drives (sorted desc)
+      const drives = sortDesc(entries0to100(DATA.drives));
+      document.getElementById('drives').innerHTML = drives.map(d => `
+        <div class="bar-row">
+          <span class="bar-label">${d.label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${d.value}%"></div></div>
+          <span class="bar-val">${round0(d.value)}</span>
+          ${pillEl(d.value)}
+        </div>
+      `).join('');
+
+      // Needs (sorted desc)
+      const needs = sortDesc(entries0to100(DATA.needs));
+      document.getElementById('needs').innerHTML = needs.map(d => `
+        <div class="bar-row">
+          <span class="bar-label">${d.label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${d.value}%"></div></div>
+          <span class="bar-val">${round0(d.value)}</span>
+          ${pillEl(d.value)}
+        </div>
+      `).join('');
+
+      // Values radar
+      const valuesOrder = ['open_to_change', 'self_transcendence', 'self_enhancement', 'hedonism', 'conservative'];
+      const ctx = document.getElementById('valuesChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: valuesOrder.map(v => titleCase(v).toUpperCase()),
+          datasets: [{
+            label: 'Values',
+            data: valuesOrder.map(v => DATA.values[v]),
+            fill: true,
+            backgroundColor: 'rgba(124, 58, 237, 0.12)',
+            borderColor: '#7C3AED',
+            borderWidth: 1.5,
+            pointBackgroundColor: '#7C3AED',
+            pointBorderColor: '#FFFFFF',
+            pointBorderWidth: 1.5,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              suggestedMin: 0,
+              suggestedMax: 100,
+              ticks: { display: false, stepSize: 20 },
+              grid: { color: '#ECECF1' },
+              angleLines: { color: '#ECECF1' },
+              pointLabels: { font: { size: 11.5, weight: '500' }, color: '#475569' },
+            },
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.label}: ${Math.round(ctx.parsed.r)} / 100`,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    /* ---------- Cognition + Communication style ---------- */
+    function renderCognitionComms() {
+      // Cognition bars (LIWC raw — multiply by 100, but values stay small)
+      const cogOrder = ['analytical_thinking', 'cognitive_processes', 'insight', 'differentiation',
+                        'tentative', 'comparisons', 'causation', 'discrepancies', 'certainty'];
+      const cogEntries = cogOrder.map(k => ({
+        key: k,
+        label: titleCase(k),
+        valueRaw: DATA.cognition[k],
+        value: pct100(DATA.cognition[k]),
+      }));
+      const maxCog = Math.max(...cogEntries.map(e => e.value));
+      document.getElementById('cognitionBars').innerHTML = cogEntries.map(c => `
+        <div class="bar-row" style="grid-template-columns: minmax(0,1fr) 1.5fr auto;">
+          <span class="bar-label">${c.label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(c.value / maxCog) * 100}%"></div></div>
+          <span class="bar-val">${c.value < 1 ? c.valueRaw.toFixed(2) : c.value}<span style="color:var(--ink-3); font-weight:500;">%</span></span>
+        </div>
+      `).join('');
+
+      // Paired bars (liwc_extension)
+      const x = DATA.liwc_extension;
+      const pairs = [
+        { l: 'Abstract', r: 'Concrete', lv: pct100(x.abstract), rv: pct100(x.concrete) },
+        { l: 'Approach', r: 'Avoidance', lv: pct100(x.approach), rv: pct100(x.avoidance) },
+        { l: 'Action',   r: 'Inaction',  lv: pct100(x.action),   rv: pct100(x.inaction) },
+        { l: 'High empathy', r: 'Low empathy', lv: pct100(x.high_empathy), rv: pct100(x.low_empathy) },
+        { l: 'Agentic',  r: 'Communal',  lv: pct100(x.agentic), rv: pct100(x.communal) },
+      ];
+      // Find max for scaling (so the widest pair stretches to the edges)
+      const maxPair = Math.max(...pairs.flatMap(p => [p.lv, p.rv]));
+      document.getElementById('pairBars').innerHTML = pairs.map(p => `
+        <div class="pair-bar">
+          <div class="pair-bar-row">
+            <span class="pair-bar-label-l">${p.l}</span>
+            <span class="pair-bar-label-r">${p.r}</span>
+          </div>
+          <div class="pair-bar-track">
+            <div class="pair-bar-half-l"><div class="pair-bar-seg-l" style="width:${(p.lv / maxPair) * 100}%"></div></div>
+            <div class="pair-bar-divider"></div>
+            <div class="pair-bar-half-r"><div class="pair-bar-seg-r" style="width:${(p.rv / maxPair) * 100}%"></div></div>
+          </div>
+          <div class="pair-bar-vals">
+            <span class="pair-bar-val-l">${p.lv}%</span>
+            <span>${p.rv}%</span>
+          </div>
+        </div>
+      `).join('');
+
+      // Allure bar
+      const allure = pct100(x.allure);
+      document.getElementById('allureBar').innerHTML = `
+        <div class="bar-row" style="grid-template-columns: minmax(0,1fr) 1.5fr auto auto;">
+          <span class="bar-label">Allure</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${allure}%; background: linear-gradient(90deg, #DB2777, #7C3AED);"></div></div>
+          <span class="bar-val">${allure}%</span>
+          ${pillEl(allure)}
+        </div>
+      `;
+    }
+
+    /* ---------- Emotion + Tone ---------- */
+    function renderEmotion() {
+      const s = DATA.sallee;
+
+      // Donut: 4 segments
+      const segs = [
+        { key: 'goodfeel',    label: 'Good feel',    val: s.goodfeel,    color: '#059669' },
+        { key: 'badfeel',     label: 'Bad feel',     val: s.badfeel,     color: '#DC2626' },
+        { key: 'ambifeel',    label: 'Mixed',        val: s.ambifeel,    color: '#D97706' },
+        { key: 'non_emotion', label: 'Non-emotion',  val: s.non_emotion, color: '#CBD5E1' },
+      ];
+      const ctx = document.getElementById('emotionDonut').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: segs.map(x => x.label),
+          datasets: [{
+            data: segs.map(x => x.val),
+            backgroundColor: segs.map(x => x.color),
+            borderColor: '#FFFFFF',
+            borderWidth: 3,
+            hoverBorderWidth: 3,
+            hoverOffset: 4,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.label}: ${(ctx.parsed * 100).toFixed(1)}%`,
+              },
+            },
+          },
+        },
+      });
+
+      // Center value: emotionality (1 - non_emotion) ≈ goodfeel + badfeel + ambifeel
+      const emotional = (1 - s.non_emotion) * 100;
+      document.getElementById('donutCenterVal').textContent = `${round0(emotional)}%`;
+
+      document.getElementById('donutLegend').innerHTML = segs.map(x => `
+        <span class="donut-legend-item">
+          <span class="donut-legend-dot" style="background:${x.color}"></span>
+          ${x.label}
+          <span class="donut-legend-val">${(x.val * 100).toFixed(1)}%</span>
+        </span>
+      `).join('');
+
+      // Emotion fingerprint (specific emotions)
+      const fpEmotions = [
+        { key: 'admiration', val: s.admiration, color: '#059669' },
+        { key: 'love',       val: s.love,       color: '#DB2777' },
+        { key: 'joy',        val: s.joy,        color: '#D97706' },
+        { key: 'curiosity',  val: s.curiosity,  color: '#7C3AED' },
+        { key: 'fear',       val: s.fear,       color: '#4F46E5' },
+        { key: 'anger',      val: s.anger,      color: '#DC2626' },
+        { key: 'sadness',    val: s.sadness,    color: '#2563EB' },
+        { key: 'excitement', val: s.excitement, color: '#EA580C' },
+      ];
+      const maxFp = Math.max(...fpEmotions.map(e => e.val));
+      document.getElementById('fingerprint').innerHTML = fpEmotions.map(e => `
+        <div class="fp-cell">
+          <div class="fp-name">${titleCase(e.key)}</div>
+          <div class="fp-val">${(e.val * 100).toFixed(1)}<span class="fp-val-suffix">%</span></div>
+          <div class="fp-bar" style="width:${(e.val / maxFp) * 100}%; background:${e.color};"></div>
+        </div>
+      `).join('');
+
+      // Time orientation stacked bar
+      const ai = DATA.additional_indicators;
+      const timeTotal = ai.focus_past + ai.focus_present + ai.focus_future;
+      const past = (ai.focus_past / timeTotal) * 100;
+      const present = (ai.focus_present / timeTotal) * 100;
+      const future = (ai.focus_future / timeTotal) * 100;
+      document.getElementById('timeStack').innerHTML = `
+        <div class="stack-bar-seg" style="width:${past}%; background:#64748B;">${past >= 12 ? `${round0(past)}%` : ''}</div>
+        <div class="stack-bar-seg" style="width:${present}%; background:#4F46E5;">${present >= 12 ? `${round0(present)}%` : ''}</div>
+        <div class="stack-bar-seg" style="width:${future}%; background:#059669;">${future >= 12 ? `${round0(future)}%` : ''}</div>
+      `;
+      document.getElementById('timeLegend').innerHTML = `
+        <span class="stack-legend-item"><span class="stack-legend-dot" style="background:#64748B"></span>Past <strong style="color:var(--ink); margin-left:2px;">${(ai.focus_past * 100).toFixed(1)}%</strong></span>
+        <span class="stack-legend-item"><span class="stack-legend-dot" style="background:#4F46E5"></span>Present <strong style="color:var(--ink); margin-left:2px;">${(ai.focus_present * 100).toFixed(1)}%</strong></span>
+        <span class="stack-legend-item"><span class="stack-legend-dot" style="background:#059669"></span>Future <strong style="color:var(--ink); margin-left:2px;">${(ai.focus_future * 100).toFixed(1)}%</strong></span>
+      `;
+
+      // Self vs external focus pair
+      const selfV = pct100(ai.self_focus);
+      const extV = pct100(ai.external_focus);
+      const maxFocus = Math.max(selfV, extV);
+      document.getElementById('focusPair').innerHTML = `
+        <div class="pair-bar">
+          <div class="pair-bar-row">
+            <span class="pair-bar-label-l">Inward / self</span>
+            <span class="pair-bar-label-r">Outward / external</span>
+          </div>
+          <div class="pair-bar-track">
+            <div class="pair-bar-half-l"><div class="pair-bar-seg-l" style="width:${(selfV / maxFocus) * 100}%; background:#7C3AED;"></div></div>
+            <div class="pair-bar-divider"></div>
+            <div class="pair-bar-half-r"><div class="pair-bar-seg-r" style="width:${(extV / maxFocus) * 100}%; background:#059669;"></div></div>
+          </div>
+          <div class="pair-bar-vals">
+            <span class="pair-bar-val-l">${(ai.self_focus * 100).toFixed(1)}%</span>
+            <span>${(ai.external_focus * 100).toFixed(1)}%</span>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ---------- Topics ---------- */
+    function renderTopics() {
+      const topicKeys = ['work', 'leisure', 'money', 'health', 'body', 'friends', 'home', 'religion', 'family', 'sexual', 'death'];
+      const items = topicKeys.map(k => ({
+        key: k,
+        label: titleCase(k),
+        valueRaw: DATA.liwc[k] || 0,
+      }));
+      const sorted = items.sort((a, b) => b.valueRaw - a.valueRaw);
+      const max = sorted[0].valueRaw;
+      document.getElementById('topics-grid').innerHTML = sorted.map(t => `
+        <div class="bar-row" style="grid-template-columns: minmax(0,1fr) 1.5fr auto;">
+          <span class="bar-label">${t.label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(t.valueRaw / max) * 100}%; background: var(--accent);"></div></div>
+          <span class="bar-val">${(t.valueRaw * 100).toFixed(2)}<span style="color:var(--ink-3); font-weight:500;">%</span></span>
+        </div>
+      `).join('');
+    }
+
+    /* ---------- Safety + Text stats ---------- */
+    function renderSafety() {
+      const t = DATA.toxicity_likelihood;
+      const m = DATA.toxicity_measures;
+      const items = [
+        { label: 'Hate speech',  raw: t.hate_speech, level: t.hate_speech },
+        { label: 'Offensive',    raw: t.offensive,   level: t.offensive },
+        { label: 'Threat',       raw: t.threat,      level: t.threat },
+        { label: 'Toxicity',     raw: t.toxicity,    level: t.toxicity },
+        { label: 'Violence',     raw: m.violence,    level: m.violence },
+        { label: 'Profanity',    raw: m.swears,      level: m.swears },
+      ];
+      document.getElementById('safetyGrid').innerHTML = items.map(it => {
+        let cls = 'ok', status = 'Clear';
+        if (it.level >= 0.4) { cls = 'warn'; status = 'Moderate'; }
+        if (it.level >= 0.7) { cls = 'bad';  status = 'Elevated'; }
+        const wrapCls = cls === 'ok' ? '' : (cls === 'warn' ? 'warn' : 'warn');
+        const display = it.level >= 0.01 ? `${(it.level * 100).toFixed(1)}%` : '< 0.1%';
+        return `
+          <div class="safety-pill ${wrapCls}">
+            <span class="safety-dot ${cls}"></span>
+            <div class="safety-body">
+              <div class="safety-label">${it.label}</div>
+              <div class="safety-status">${status} · ${display}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Stats
+      const s = DATA.summary;
+      const stats = [
+        { label: 'Words',        val: fmtNum(s.word_count) },
+        { label: 'Sentences',    val: fmtNum(s.sentence_count) },
+        { label: 'Words / sent', val: round1(s.words_per_sentence) },
+        { label: 'Six+ words',   val: `${(s.six_plus_words * 100).toFixed(1)}%` },
+        { label: 'Capitals',     val: `${(s.capitals * 100).toFixed(1)}%` },
+        { label: 'Negations',    val: `${round0(DATA.social_dynamics.negations)}` },
+      ];
+      document.getElementById('statGrid').innerHTML = stats.map(st => `
+        <div class="stat-block">
+          <div class="stat-label">${st.label}</div>
+          <div class="stat-val">${st.val}</div>
+        </div>
+      `).join('');
+    }
+
+    /* ---------- Insight callouts ---------- */
+    function renderCallouts() {
+      const d = DATA.disc_dimensions;
+      const clout = pct100(DATA.liwc.clout);
+      const pf = round0(d.people_relationship_emotion_focus);
+      const baAxis = round0(d.bold_assertive_outgoing);
+      document.getElementById('personalityCallout').innerHTML = `
+        <div class="callout">
+          <span class="callout-icon">i</span>
+          <span>Strong <strong>people-focus (${pf})</strong> paired with a high <strong>bold-assertive axis (${baAxis})</strong> and elevated <strong>clout (${clout})</strong> — the linguistic signature of a natural communicator who leads conversations.</span>
+        </div>
+      `;
+
+      const curiosity = round0(DATA.needs.curiosity);
+      const achievement = round0(DATA.drives.achievement);
+      const otc = round0(DATA.values.open_to_change);
+      document.getElementById('motivationCallout').innerHTML = `
+        <div class="callout">
+          <span class="callout-icon">i</span>
+          <span>Top of the motivation stack: <strong>curiosity (${curiosity})</strong>, <strong>achievement (${achievement})</strong>, and a preference for <strong>open-to-change values (${otc})</strong> — a learning-driven personality that pursues new experiences over routine.</span>
+        </div>
+      `;
+
+      const tone = pct100(DATA.liwc.emotional_tone);
+      const emotional = round0((1 - DATA.sallee.non_emotion) * 100);
+      document.getElementById('emotionCallout').innerHTML = `
+        <div class="callout">
+          <span class="callout-icon">i</span>
+          <span>Strongly <strong>positive emotional tone (${tone})</strong> with only <strong>${emotional}% emotional language</strong> overall — communication is measured and optimistic rather than expressive or volatile.</span>
+        </div>
+      `;
+    }
+
+    /* ============================================================
+     * 6. init
+     * ============================================================ */
+    function initAnchorNav() {
+      const sections = ['overview', 'kpi', 'personality', 'motivation', 'cognition', 'emotion', 'topics', 'safety'];
+      const links = {};
+      document.querySelectorAll('.anchor-nav a').forEach(a => {
+        const id = a.getAttribute('href').slice(1);
+        links[id] = a;
+      });
+
+      const observer = new IntersectionObserver(entries => {
+        // Find the entry highest on screen that is intersecting
+        let best = null;
+        entries.forEach(en => {
+          if (en.isIntersecting) {
+            if (!best || en.boundingClientRect.top < best.boundingClientRect.top) {
+              best = en;
+            }
+          }
+        });
+        if (best) {
+          const id = best.target.id;
+          Object.values(links).forEach(l => l.classList.remove('active'));
+          if (links[id]) links[id].classList.add('active');
+        }
+      }, { rootMargin: '-120px 0px -60% 0px', threshold: [0, 0.25, 0.5] });
+
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderMeta();
+      renderHero();
+      renderKPIs();
+      renderCallouts();
+      renderBigFive();
+      renderDISC();
+      renderSubfacets();
+      renderMotivation();
+      renderCognitionComms();
+      renderEmotion();
+      renderTopics();
+      renderSafety();
+      initAnchorNav();
+    });
+  </script>
+</body>
+</html>
